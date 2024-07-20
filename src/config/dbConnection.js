@@ -12,4 +12,14 @@ const dynamoDBConfig = {
 const dynamoDB = new AWS.DynamoDB(dynamoDBConfig);
 const docClient = new AWS.DynamoDB.DocumentClient(dynamoDBConfig);
 
-module.exports = { dynamoDB, docClient };
+const checkConnection = async () => {
+    try {
+        await dynamoDB.listTables().promise();
+        console.log('DynamoDB connection established successfully');
+    } catch (error) {
+        console.error('Error connecting to DynamoDB:', error.message);
+        process.exit(1);
+    }
+};
+
+module.exports = { dynamoDB, docClient, checkConnection };
