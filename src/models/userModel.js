@@ -3,62 +3,46 @@ const { v4: uuidv4 } = require("uuid");
 
 const tableName = 'User';
 
-// const params = {
-//   TableName: "User",
-//   Item: {
-//     userId: { S: uuidv4() },
-//     email: { S: "example@email.com" },
-//     name: { S: "name" },
-//     password: { S: "password" },
-//   },
-// };
-
-// Call DynamoDB to add the item to the table
-// dynamoDB.putItem(params, function (err, data) {
-//   if (err) {
-//     console.log("Error", err);
-//   } else {
-//     console.log("Success", data);
-//   }
-// });
-
-var params = {
-  TableName: "User",
-  Item: {
-    userId: uuidv4(),
-    email: "example@email.com",
-    name: "name",
-    password: "password",
-  },
-};
-
-// docClient.put(params, function (err, data) {
-//   if (err) {
-//     console.log("Error", err);
-//   } else {
-//     console.log("Success", data);
-//   }
-// });
-
 const User = {
     create: async (user) => {
+        const userId = uuidv4();
         const params = {
             TableName: tableName,
             Item: {
-                userId: uuidv4(),
+                userId: userId,
                 name: user.name,
                 email: user.email,
                 password: user.password
             }
         };
-        return docClient.put(params).promise();
+
+        return new Promise((resolve, reject) => {
+            docClient.put(params, (err) => {
+                if (err) {
+                    return reject(err);
+                }
+                // Retrieve the newly created item
+                const getParams = {
+                    TableName: tableName,
+                    Key: { userId }
+                };
+
+                docClient.get(getParams, (err, data) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(data.Item);
+                });
+            });
+        });
     },
     findOne: async (userId) => {
         const params = {
             TableName: tableName,
             Key: { userId }
         };
-        return docClient.get(params).promise();
+        const data = await docClient.get(params).promise();
+        return data.Item;
     },
     update: async (userId, updates) => {
         const params = {
@@ -75,23 +59,27 @@ const User = {
             },
             ReturnValues: 'UPDATED_NEW'
         };
-        return docClient.update(params).promise();
+        const data = await docClient.update(params).promise();
+        return data.Attributes;
     },
     delete: async (userId) => {
         const params = {
             TableName: tableName,
             Key: { userId }
         };
-        return docClient.delete(params).promise();
+        const data = await docClient.delete(params).promise();
+        return data;
     }
 };
 
-User.create({
+const newUser = User.create({
     name: 'John Doe',
     email: 'john@email.com',
     password: 'password'
-}).then(() => {
-    console.log('User created');
+}).then((user) => {
+    console.log('User created:', user);
+}).catch((err) => {
+    console.error('Error creating user:', err);
 });
 
 module.exports = User;
