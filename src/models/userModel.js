@@ -15,7 +15,6 @@ const User = {
                 password: user.password
             }
         };
-
         return new Promise((resolve, reject) => {
             docClient.put(params, (err) => {
                 if (err) {
@@ -36,6 +35,7 @@ const User = {
             });
         });
     },
+
     findOne: async (userId) => {
         const params = {
             TableName: tableName,
@@ -44,6 +44,7 @@ const User = {
         const data = await docClient.get(params).promise();
         return data.Item;
     },
+
     update: async (userId, updates) => {
         const params = {
             TableName: tableName,
@@ -72,14 +73,11 @@ const User = {
     }
 };
 
-const newUser = User.create({
-    name: 'John Doe',
-    email: 'john@email.com',
-    password: 'password'
-}).then((user) => {
-    console.log('User created:', user);
+const newUser = User.findOne('b4713bb3-edcb-4e82-9d95-b80e107f3da0');
+newUser.then((data) => {
+    console.log(data);
 }).catch((err) => {
-    console.error('Error creating user:', err);
+    console.log(err);
 });
 
 module.exports = User;
