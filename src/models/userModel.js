@@ -86,16 +86,43 @@ const User = {
     },
     
     delete: async (userId) => {
-        const params = {
-            TableName: tableName,
-            Key: { userId }
-        };
-        const data = await docClient.delete(params).promise();
-        return data;
+        return new Promise((resolve, reject) => {
+            // Retrieve the item to be deleted
+            const getParams = {
+                TableName: tableName,
+                Key: { userId }
+            };
+
+            docClient.get(getParams, (err, data) => {
+                if (err) {
+                    return reject(err);
+                }
+                if (!data.Item) {
+                    return reject(new Error('User not found'));
+                }
+
+                // Store the item to return after deletion
+                const deletedItem = data.Item;
+
+                // Delete the item
+                const deleteParams = {
+                    TableName: tableName,
+                    Key: { userId }
+                };
+
+                docClient.delete(deleteParams, (err) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    console.log("Success: Item deleted");
+                    resolve(deletedItem);
+                });
+            });
+        });
     }
 };
 
-const newUser = User.update('294dab12-dcc6-4f64-839f-92115836ae05', { name: 'wat wayne', email: 'wat@rmail.com' });
+const newUser = User.delete('fabb2347-b6e3-4594-8bb9-a7b79a0174b4');
 newUser.then((data) => {
     console.log(data);
 }).catch((err) => {
