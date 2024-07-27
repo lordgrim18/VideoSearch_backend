@@ -1,4 +1,5 @@
-const { dynamoDB, docClient, checkConnection } = require('../db/dbConnection');
+const e = require('cors');
+const { docClient } = require('../db/dbConnection');
 const { v4: uuidv4 } = require("uuid");
 
 const tableName = 'User';
@@ -60,9 +61,30 @@ const User = {
             },
             ReturnValues: 'UPDATED_NEW'
         };
-        const data = await docClient.update(params).promise();
-        return data.Attributes;
+
+        return new Promise((resolve, reject) => {
+            docClient.update(params, (err) => {
+                if (err) {
+                    return reject(err);
+                }
+                console.log("Success: Item updated");
+
+                // Retrieve the updated item
+                const getParams = {
+                    TableName: tableName,
+                    Key: { userId }
+                };
+
+                docClient.get(getParams, (err, data) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(data.Item);
+                });
+            });
+        });
     },
+    
     delete: async (userId) => {
         const params = {
             TableName: tableName,
@@ -73,11 +95,10 @@ const User = {
     }
 };
 
-const newUser = User.findOne('b4713bb3-edcb-4e82-9d95-b80e107f3da0');
+const newUser = User.update('294dab12-dcc6-4f64-839f-92115836ae05', { name: 'wat wayne', email: 'wat@rmail.com' });
 newUser.then((data) => {
     console.log(data);
 }).catch((err) => {
     console.log(err);
 });
-
 module.exports = User;
